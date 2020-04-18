@@ -1,33 +1,37 @@
+from random import randint
+
+
+# creating coffee recipe template
+class Recipe:
+    def __init__(self, water, milk, beans, cost):
+        self.ingredients = {'water': water,
+                            'milk': milk,
+                            'coffee beans': beans}
+        self.cost = cost
+
+
+# programming coffee machine
 class CoffeeMachine:
+    # configuring the coffee recipes
+    espresso = Recipe(250, 0, 16, 4)
+    latte = Recipe(350, 75, 20, 7)
+    cappuccino = Recipe(200, 100, 12, 6)
+
     state = 'idle'
 
-    # will be inserted in messages to user as appropriate
+    # string chunks to be inserted in messages to user as appropriate
     fill_prompts = {'water': 'ml of water',
                     'milk': 'ml of milk',
-                    'beans': 'grams of coffee beans',
+                    'coffee beans': 'grams of coffee beans',
                     'cups': 'disposable coffee cups'}
 
     def __init__(self):
-        self.recipes = {'espresso': {'water': 250,
-                                     'milk': 0,
-                                     'beans': 16,
-                                     'cost': 4},
-                        'latte': {'water': 350,
-                                  'milk': 75,
-                                  'beans': 20,
-                                  'cost': 7},
-                        'cappuccino': {'water': 200,
-                                       'milk': 100,
-                                       'beans': 12,
-                                       'cost': 6}
-                        }
-
-        # initial resources in machine on start
-        self.resources = {'water': 400,
-                          'milk': 540,
-                          'beans': 120,
-                          'cups': 9,
-                          'money': 550}
+        # resources in machine on start
+        self.resources = {'water': randint(0, 10) * 50,
+                          'milk': randint(0, 10) * 25,
+                          'coffee beans': randint(0, 10) * 4,
+                          'cups': randint(0, 5),
+                          'money': randint(0, 700)}
 
         self.action = None
         self.filling = None
@@ -41,7 +45,7 @@ class CoffeeMachine:
         if self.state == 'fill':
             return input(f'Write how many {self.fill_prompts[self.filling]} you are adding: ')
 
-    def run(self):  # machine controller
+    def run(self):  # machine controller translating user commands into actions
         while True:
             self.action = self.interface()
             if self.action == 'buy':
@@ -50,11 +54,14 @@ class CoffeeMachine:
             if self.action == 'fill':
                 print()
                 self.state = self.action
-                amounts = {}
+                amounts = {}  # creating dictionary for each resource amount to be refilled
                 for k in self.fill_prompts.keys():
                     self.filling = k
-                    amounts[k] = int(self.interface())
-                self.fill(amounts)
+                    try:
+                        amounts[k] = abs(int(self.interface()))
+                    except:
+                        amounts[k] = 0
+                self.fill(amounts)  # invoking the fill method passing the dict as a parameter
             if self.action == 'take':
                 self.take()
             if self.action == 'remaining':
@@ -70,8 +77,8 @@ class CoffeeMachine:
         print()
 
     def enough(self, recipe):  # checking if there is enough resources to make a coffee
-        for k in [k for k in self.recipes[recipe].keys() if k != 'cost']:
-            if self.resources[k] < self.recipes[recipe][k]:
+        for k, v in recipe.ingredients.items():
+            if self.resources[k] < v:
                 print(f'Sorry, not enough {k}!')
                 return False
         if self.resources['cups'] < 1:
@@ -80,22 +87,23 @@ class CoffeeMachine:
         return True
 
     def buy(self, order):  # serving a coffee
+        if order not in ['1', '2', '3', 'back']:  # handling invalid input (surprise!)
+                order = str(randint(1, 3))
         if order != 'back':
-            orders = {'1': 'espresso',
-                      '2': 'latte',
-                      '3': 'cappuccino'}
+            orders = {'1': self.espresso,
+                      '2': self.latte,
+                      '3': self.cappuccino}
             recipe = orders[order]
             if self.enough(recipe):
                 print('I have enough resources, making you a coffee!')
-                for k, v in self.recipes[recipe].items():
-                    if k != 'cost':
-                        self.resources[k] -= v
+                for k, v in recipe.ingredients.items():
+                    self.resources[k] -= v
                 self.resources['cups'] -= 1
-                self.resources['money'] += self.recipes[recipe]['cost']
-            print()
+                self.resources['money'] += recipe.cost
+        print()
         self.state = 'idle'
 
-    def fill(self, amounts):  # adding resources
+    def fill(self, amounts):  # refilling resources
         for k, v in amounts.items():
             self.resources[k] += v
         self.state = 'idle'
