@@ -57,7 +57,7 @@ class CoffeeMachine:
                 amounts = {}  # creating dictionary for each resource amount to be refilled
                 for k in self.fill_prompts.keys():
                     self.filling = k
-                    try:
+                    try:  # forcing any invalid input to 0
                         amounts[k] = abs(int(self.interface()))
                     except:
                         amounts[k] = 0
@@ -88,7 +88,7 @@ class CoffeeMachine:
 
     def buy(self, order):  # serving a coffee
         if order not in ['1', '2', '3', 'back']:  # handling invalid input (surprise!)
-                order = str(randint(1, 3))
+            order = str(randint(1, 3))
         if order != 'back':
             orders = {'1': self.espresso,
                       '2': self.latte,
